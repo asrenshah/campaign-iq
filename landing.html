@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Campaign IQ</title>
+    <style>
+        body {
+            font-family: Arial;
+            background: #0b0e14;
+            color: white;
+            text-align: center;
+            padding: 60px;
+        }
+
+        h1 {
+            font-size: 40px;
+        }
+
+        p {
+            color: #9aa4b2;
+            font-size: 18px;
+            max-width: 600px;
+            margin: auto;
+        }
+
+        .box {
+            margin-top: 40px;
+            padding: 20px;
+            background: #141a24;
+            display: inline-block;
+            border-radius: 12px;
+        }
+
+        input {
+            padding: 12px;
+            width: 250px;
+            background: #0b0e14;
+            border: 1px solid #29323f;
+            color: white;
+            border-radius: 8px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #4f7aff;
+        }
+
+        button {
+            padding: 12px 20px;
+            background: #4f7aff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        button:hover {
+            background: #3b64e0;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .message {
+            margin-top: 16px;
+            font-size: 14px;
+            color: #3dd68c;
+        }
+
+        .features {
+            margin-top: 40px;
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .feature-item {
+            background: #141a24;
+            padding: 20px 24px;
+            border-radius: 12px;
+            width: 180px;
+            border: 1px solid #232b38;
+        }
+
+        .feature-item h3 {
+            margin-bottom: 8px;
+            font-size: 18px;
+        }
+
+        .feature-item p {
+            font-size: 14px;
+            color: #8b9bb5;
+        }
+
+        .emoji {
+            font-size: 32px;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .pricing-box {
+            margin-top: 40px;
+            padding: 20px;
+            background: #141a24;
+            border-radius: 12px;
+            display: inline-block;
+            border: 1px solid #232b38;
+        }
+
+        .pricing-box h2 {
+            font-size: 24px;
+            margin-bottom: 16px;
+        }
+
+        .pricing-box .price-item {
+            padding: 8px 0;
+            font-size: 16px;
+            color: #e8edf2;
+        }
+
+        .pricing-box .price-item span {
+            color: #4f7aff;
+            font-weight: 600;
+        }
+
+        .pricing-box .price-note {
+            color: #9aa4b2;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .upsell {
+            margin-top: 20px;
+            color: #9aa4b2;
+            font-size: 14px;
+        }
+
+        .upsell span {
+            color: #3dd68c;
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Campaign IQ</h1>
+
+    <p>
+        Every morning, know exactly which ads to pause, scale, or fix in under 60 seconds.
+    </p>
+
+    <div class="features">
+        <div class="feature-item">
+            <span class="emoji">⚡</span>
+            <h3>60 Seconds</h3>
+            <p>Get your daily briefing in under a minute</p>
+        </div>
+        <div class="feature-item">
+            <span class="emoji">💰</span>
+            <h3>Save Money</h3>
+            <p>Stop wasting budget on underperforming campaigns</p>
+        </div>
+        <div class="feature-item">
+            <span class="emoji">🧠</span>
+            <h3>AI-Powered</h3>
+            <p>Smart decisions based on your real campaign data</p>
+        </div>
+    </div>
+
+    <!-- PRICING SECTION -->
+    <div class="pricing-box">
+        <h2>💰 Pricing (Early Access)</h2>
+
+        <div class="price-item">🟢 Starter — <span>$19</span>/month</div>
+        <div class="price-item">🚀 Pro — <span>$49</span>/month</div>
+        <div class="price-item">🏢 Agency — <span>$99</span>/month</div>
+
+        <div class="price-note">
+            Cancel anytime. Built for digital marketing agencies.
+        </div>
+    </div>
+
+    <!-- JOIN SECTION -->
+    <div class="box">
+        <h3>Join Early Access</h3>
+        <input id="emailInput" placeholder="Enter email" />
+        <button id="joinBtn" onclick="join()">Join</button>
+        <div id="message" class="message"></div>
+    </div>
+
+    <!-- UPSELL MESSAGE -->
+    <div class="upsell">
+        🎁 Early users will get <span>lifetime discounted pricing</span>.
+    </div>
+
+    <script>
+        async function join() {
+            const btn = document.getElementById('joinBtn');
+            const emailInput = document.getElementById('emailInput');
+            const messageDiv = document.getElementById('message');
+
+            const email = emailInput.value.trim();
+
+            if (!email) {
+                messageDiv.style.color = '#ff5e6b';
+                messageDiv.textContent = '⚠️ Please enter your email';
+                return;
+            }
+
+            // Simple email validation
+            if (!email.includes('@') || !email.includes('.')) {
+                messageDiv.style.color = '#ff5e6b';
+                messageDiv.textContent = '⚠️ Please enter a valid email';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Submitting...';
+            messageDiv.textContent = '';
+
+            try {
+                const response = await fetch("http://127.0.0.1:5000/join", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ email })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Server error');
+                }
+
+                // REDIRECT TO THANK YOU PAGE
+                window.location.href = "thanks.html";
+
+            } catch (error) {
+                messageDiv.style.color = '#ff5e6b';
+                messageDiv.textContent = '❌ Something went wrong. Please try again.';
+                btn.disabled = false;
+                btn.textContent = 'Join';
+            }
+        }
+    </script>
+
+</body>
+</html>

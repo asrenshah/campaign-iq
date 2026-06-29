@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Campaign IQ - Morning Briefing</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0b0e14;
+            color: #e8edf2;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 760px;
+            width: 100%;
+            background: #141a24;
+            border-radius: 24px;
+            padding: 40px 36px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+            border: 1px solid #232b38;
+        }
+
+        .logo {
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            color: #6c7a92;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        h1 {
+            font-size: 26px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .subtitle {
+            color: #8b9bb5;
+            font-size: 15px;
+            margin-bottom: 28px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 120px;
+            background: #0f151e;
+            border: 1px solid #29323f;
+            border-radius: 14px;
+            padding: 16px;
+            color: #e8edf2;
+            font-size: 14px;
+            font-family: 'Courier New', monospace;
+            resize: vertical;
+            transition: border 0.2s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #4f7aff;
+            box-shadow: 0 0 0 3px rgba(79, 122, 255, 0.15);
+        }
+
+        textarea::placeholder {
+            color: #4f5a6e;
+        }
+
+        .btn {
+            margin-top: 16px;
+            width: 100%;
+            padding: 14px;
+            background: #4f7aff;
+            border: none;
+            border-radius: 14px;
+            color: white;
+            font-size: 17px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        .btn:hover {
+            background: #3b64e0;
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .output {
+            margin-top: 32px;
+            background: #0f151e;
+            border-radius: 16px;
+            padding: 24px 28px;
+            border: 1px solid #232b38;
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .output.visible {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .greeting {
+            font-size: 22px;
+            font-weight: 500;
+            margin-bottom: 18px;
+        }
+
+        .summary-card {
+            background: #1a2330;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 4px solid #f5a623;
+        }
+
+        .summary-label {
+            font-size: 13px;
+            color: #8b9bb5;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .summary-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #f5a623;
+            margin-top: 4px;
+        }
+
+        .ceo-summary {
+            background: #1a2330;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+            border-left: 4px solid #4f7aff;
+            font-size: 15px;
+            color: #e8edf2;
+        }
+
+        hr {
+            border: none;
+            border-top: 1px solid #232b38;
+            margin: 18px 0;
+        }
+
+        .action-card {
+            background: #1a2330;
+            border-radius: 12px;
+            padding: 16px 18px;
+            margin-bottom: 10px;
+            border-left: 4px solid transparent;
+            transition: transform 0.15s, box-shadow 0.15s;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .action-card:hover {
+            transform: translateX(4px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        }
+
+        .action-card.urgent {
+            border-left-color: #ff5e6b;
+        }
+        .action-card.growth {
+            border-left-color: #3dd68c;
+        }
+        .action-card.watch {
+            border-left-color: #f5a623;
+        }
+
+        .action-card .campaign {
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+
+        .action-card .detail {
+            font-size: 14px;
+            color: #a8b7ce;
+        }
+
+        .action-card .impact {
+            font-size: 13px;
+            color: #3dd68c;
+            margin-top: 4px;
+        }
+
+        .action-card .insight {
+            font-size: 13px;
+            color: #8b9bb5;
+            margin-top: 4px;
+            font-style: italic;
+        }
+
+        .action-card .impact-text {
+            font-size: 13px;
+            color: #f5a623;
+            margin-top: 4px;
+            font-weight: 500;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .container {
+                padding: 24px 18px;
+            }
+
+            .summary-value {
+                font-size: 22px;
+            }
+
+            .output {
+                padding: 16px 14px;
+            }
+
+            h1 {
+                font-size: 22px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="logo">Campaign IQ</div>
+        <h1>Morning Briefing</h1>
+        <p class="subtitle">Paste your campaign data below and get your daily briefing in seconds.</p>
+
+        <textarea id="inputData" placeholder="Paste your CSV or JSON campaign data here..."></textarea>
+
+        <button class="btn" id="analyzeBtn" onclick="analyze()">☀️ Generate Briefing</button>
+
+        <div class="output" id="output">
+            <!-- Dynamic content will be inserted here -->
+        </div>
+    </div>
+
+    <script>
+        async function analyze() {
+            const btn = document.getElementById('analyzeBtn');
+            const outputDiv = document.getElementById('output');
+
+            const rawInput = document.getElementById('inputData').value.trim();
+
+            let payload;
+            try {
+                payload = JSON.parse(rawInput);
+            } catch {
+                payload = { ads: rawInput };
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = "Analyzing...";
+
+            outputDiv.classList.add('visible');
+            outputDiv.innerHTML = `
+                <div style="text-align:center;color:#6c7a92;">
+                    ⏳ Scanning campaigns...
+                </div>
+            `;
+
+            try {
+                const response = await fetch("http://127.0.0.1:5000/analyze", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+
+                const result = await response.json();
+
+                // SORT CAMPAIGNS BY SCORE (IMPORTANT)
+                const campaigns = (result.campaigns || []).sort((a, b) => (b.score || 0) - (a.score || 0));
+
+                let html = "";
+
+                // HEADER
+                html += `
+                    <div class="greeting">${result.greeting ?? 'Good Morning 👋'}</div>
+
+                    <div class="summary-card">
+                        <div>
+                            <div class="summary-label">💰 Money at Risk</div>
+                            <div class="summary-value">${result.summary?.money_at_risk ?? 'USD 0/day'}</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div class="summary-label">📊 Campaigns</div>
+                            <div style="font-size:20px;font-weight:600;">
+                                ${result.summary?.total_campaigns_checked ?? 0}
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // CEO SUMMARY
+                if (result.ceo_summary) {
+                    html += `
+                        <div class="ceo-summary">
+                            🧠 ${result.ceo_summary}
+                        </div>
+                    `;
+                }
+
+                html += `
+                    <hr>
+                    <div style="font-size:14px;color:#8b9bb5;margin-bottom:10px;">
+                        🎯 Ranked Campaign Intelligence
+                    </div>
+                `;
+
+                // CAMPAIGN LOOP (CORE SAAS VALUE)
+                if (campaigns.length === 0) {
+                    html += `
+                        <div style="text-align:center;padding:30px 0;color:#6c7a92;">
+                            ✅ No campaigns to analyze. All looks healthy!
+                        </div>
+                    `;
+                } else {
+                    campaigns.forEach(c => {
+                        let color = "";
+                        let badge = "";
+
+                        if (c.status === "PAUSE") {
+                            color = "urgent";
+                            badge = "🔴 PAUSE";
+                        } else if (c.status === "SCALE") {
+                            color = "growth";
+                            badge = "🟢 SCALE";
+                        } else if (c.status === "WATCH") {
+                            color = "watch";
+                            badge = "⚠ WATCH";
+                        } else {
+                            color = "watch";
+                            badge = `📌 ${c.status || 'REVIEW'}`;
+                        }
+
+                        html += `
+                            <div class="action-card ${color}">
+                                <div class="campaign">${badge} — ${c.name ?? 'Unknown Campaign'}</div>
+                                <div class="detail">${c.reason ?? 'No reason provided'}</div>
+                                <div class="impact">${c.impact ?? 'No impact specified'}</div>
+                                ${c.insight ? `<div class="insight">💡 ${c.insight}</div>` : ''}
+                                ${c.impact_text ? `<div class="impact-text">${c.impact_text}</div>` : ''}
+                                <div class="detail" style="margin-top:6px;opacity:0.6;">
+                                    Score: ${c.score ?? 0}/100
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+
+                html += `
+                    <hr>
+                    <div style="text-align:center;color:#4f5a6e;font-size:12px;">
+                        Campaign IQ — AI Decision Engine • ${new Date().toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}
+                    </div>
+                `;
+
+                outputDiv.innerHTML = html;
+
+            } catch (error) {
+                outputDiv.innerHTML = `
+                    <div style="color:#ff5e6b;text-align:center;padding:20px;">
+                        ❌ Error: ${error.message || 'Something went wrong. Make sure the server is running.'}
+                    </div>
+                `;
+            }
+
+            btn.disabled = false;
+            btn.innerHTML = "☀️ Generate Briefing";
+        }
+    </script>
+</body>
+</html>
