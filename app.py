@@ -220,4 +220,4 @@ def join():
     return jsonify({"status": "success", "message": "Added to waitlist"})
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=5000)
