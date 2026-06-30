@@ -136,29 +136,43 @@
             margin-bottom: 18px;
         }
 
-        .summary-card {
+        /* KPI GRID */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .kpi-item {
             background: #1a2330;
             border-radius: 12px;
-            padding: 16px 20px;
-            margin-bottom: 24px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-left: 4px solid #f5a623;
+            padding: 14px 16px;
+            text-align: center;
+            border: 1px solid #232b38;
         }
 
-        .summary-label {
-            font-size: 13px;
-            color: #8b9bb5;
+        .kpi-label {
+            color: #6c7a92;
+            font-size: 11px;
             text-transform: uppercase;
-            letter-spacing: 0.3px;
+            letter-spacing: 0.5px;
         }
 
-        .summary-value {
-            font-size: 28px;
+        .kpi-value {
+            font-size: 20px;
             font-weight: 700;
-            color: #f5a623;
             margin-top: 4px;
+        }
+
+        .kpi-value.orange {
+            color: #f5a623;
+        }
+        .kpi-value.blue {
+            color: #4f7aff;
+        }
+        .kpi-value.green {
+            color: #3dd68c;
         }
 
         .ceo-summary {
@@ -233,14 +247,41 @@
             font-weight: 500;
         }
 
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #6c7a92;
+        }
+
+        .empty-state .icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+
+        .empty-state .title {
+            font-size: 18px;
+            color: #e8edf2;
+            margin-bottom: 6px;
+        }
+
+        .empty-state .sub {
+            font-size: 13px;
+            color: #6c7a92;
+        }
+
         /* Responsive */
         @media (max-width: 600px) {
             .container {
                 padding: 24px 18px;
             }
 
-            .summary-value {
-                font-size: 22px;
+            .kpi-grid {
+                grid-template-columns: 1fr 1fr 1fr;
+                gap: 8px;
+            }
+
+            .kpi-value {
+                font-size: 16px;
             }
 
             .output {
@@ -287,14 +328,24 @@
             btn.innerHTML = "Analyzing...";
 
             outputDiv.classList.add('visible');
+
+            // ================================
+            // UPGRADE: LOADING EXPERIENCE
+            // ================================
             outputDiv.innerHTML = `
-                <div style="text-align:center;color:#6c7a92;">
-                    ⏳ Scanning campaigns...
+                <div style="text-align:center;padding:30px;">
+                    <div style="font-size:18px;">🧠 AI Engine Processing</div>
+                    <div style="color:#6c7a92;margin-top:10px;">
+                        Analyzing ROAS, CPA, CTR signals...
+                    </div>
+                    <div style="margin-top:10px;color:#4f7aff;">
+                        Generating insights...
+                    </div>
                 </div>
             `;
 
             try {
-                const response = await fetch("http://127.0.0.1:5000/analyze", {
+                const response = await fetch("/analyze", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json"
@@ -308,8 +359,9 @@
 
                 const result = await response.json();
 
-                // SORT CAMPAIGNS BY SCORE (IMPORTANT)
-                const campaigns = (result.campaigns || []).sort((a, b) => (b.score || 0) - (a.score || 0));
+                // SORT CAMPAIGNS BY SCORE
+                const campaigns = (result.campaigns || [])
+                    .sort((a, b) => (b.score || 0) - (a.score || 0));
 
                 let html = "";
 
@@ -317,16 +369,21 @@
                 html += `
                     <div class="greeting">${result.greeting ?? 'Good Morning 👋'}</div>
 
-                    <div class="summary-card">
-                        <div>
-                            <div class="summary-label">💰 Money at Risk</div>
-                            <div class="summary-value">${result.summary?.money_at_risk ?? 'USD 0/day'}</div>
+                    <!-- ================================ -->
+                    <!-- UPGRADE: KPI HEADER (3 COLUMN)   -->
+                    <!-- ================================ -->
+                    <div class="kpi-grid">
+                        <div class="kpi-item">
+                            <div class="kpi-label">💰 Money at Risk</div>
+                            <div class="kpi-value orange">${result.summary?.money_at_risk ?? 'USD 0/day'}</div>
                         </div>
-                        <div style="text-align:right;">
-                            <div class="summary-label">📊 Campaigns</div>
-                            <div style="font-size:20px;font-weight:600;">
-                                ${result.summary?.total_campaigns_checked ?? 0}
-                            </div>
+                        <div class="kpi-item">
+                            <div class="kpi-label">📊 Campaigns</div>
+                            <div class="kpi-value">${result.summary?.total_campaigns_checked ?? 0}</div>
+                        </div>
+                        <div class="kpi-item">
+                            <div class="kpi-label">🧠 Engine</div>
+                            <div class="kpi-value blue">ACTIVE</div>
                         </div>
                     </div>
                 `;
@@ -347,11 +404,15 @@
                     </div>
                 `;
 
-                // CAMPAIGN LOOP (CORE SAAS VALUE)
+                // ================================
+                // UPGRADE: EMPTY STATE
+                // ================================
                 if (campaigns.length === 0) {
                     html += `
-                        <div style="text-align:center;padding:30px 0;color:#6c7a92;">
-                            ✅ No campaigns to analyze. All looks healthy!
+                        <div class="empty-state">
+                            <div class="icon">📭</div>
+                            <div class="title">No campaigns found</div>
+                            <div class="sub">Paste campaign data to generate AI insights</div>
                         </div>
                     `;
                 } else {
