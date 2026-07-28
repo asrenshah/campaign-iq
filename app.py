@@ -23,6 +23,14 @@ app = Flask(__name__)
 CORS(app)
 
 # ============================================
+# HEALTH CHECK ROUTE
+# ============================================
+@app.route("/health")
+def health():
+    return "Campaign IQ is alive", 200
+
+
+# ============================================
 # POSTGRESQL CONNECTION (GUNA DATABASE_URL)
 # ============================================
 def get_db_connection():
@@ -284,4 +292,5 @@ def export_csv():
 # RUN SERVER
 # ============================================
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
