@@ -1,0 +1,113 @@
+<!-- ================================ -->
+<!-- DASHBOARD                        -->
+<!-- ================================ -->
+<div class="container" id="dashboard">
+    <!-- ================================ -->
+<!-- SAAS HEADER -->
+<!-- ================================ -->
+
+<div class="dashboard-header">
+
+    <div class="brand">
+        <div class="logo">
+            Campaign IQ
+        </div>
+
+        <h1>
+            Morning Briefing 👋
+        </h1>
+
+        <p class="subtitle">
+            Your AI marketing analyst is monitoring campaign performance.
+        </p>
+    </div>
+
+
+    <div class="user-badge" id="userBadge">
+        👤 <span id="userEmailDisplay"></span>
+        <span class="logout-link" onclick="logout()">
+            Logout
+        </span>
+    </div>
+
+</div>
+
+    <!-- ================================ -->
+<!-- AI INPUT PANEL -->
+<!-- ================================ -->
+
+<div class="input-panel">
+
+    <div class="input-title">
+        📊 Campaign Data
+    </div>
+
+    <div class="input-description">
+        Paste your campaign metrics and let AI decide the next action.
+    </div>
+
+
+    <textarea 
+        id="inputData" 
+        placeholder="Example:
+
+Campaign: Black Friday Sale
+Budget: 500
+Spend: 320
+CTR: 2.7
+CPA: 6.67
+ROAS: 4.2
+Revenue: 1344">
+    </textarea>
+
+
+    <button 
+        class="btn" 
+        id="analyzeBtn" 
+        onclick="analyze()">
+        🧠 Analyze Campaign
+    </button>
+
+</div>
+
+    <!-- ================================ -->
+<!-- AI DASHBOARD OUTPUT -->
+<!-- ================================ -->
+
+<div class="output" id="output">
+
+    <div class="ai-loading">
+        <div class="loading-icon">
+            🧠
+        </div>
+
+        <div>
+            AI Decision Engine Ready
+        </div>
+    </div>
+
+</div>
+
+    <div style="margin-top:30px;">
+        <input id="historySearch"
+            class="search-box"
+            placeholder="🔍 Search campaign..."
+            oninput="renderHistory()"
+        />
+        <div class="filter-group">
+            <button class="filter-btn active active-all" onclick="setFilter('ALL')">ALL</button>
+            <button class="filter-btn" onclick="setFilter('SCALE')">🟢 SCALE</button>
+            <button class="filter-btn" onclick="setFilter('WATCH')">🟡 WATCH</button>
+            <button class="filter-btn" onclick="setFilter('PAUSE')">🔴 PAUSE</button>
+        </div>
+    </div>
+
+    <div id="historyPanel" class="history-panel"></div>
+
+    <div class="export-group">
+        <button class="export-btn all" onclick="downloadCSV('ALL')">📥 ALL</button>
+        <button class="export-btn scale" onclick="downloadCSV('SCALE')">🟢 SCALE</button>
+        <button class="export-btn watch" onclick="downloadCSV('WATCH')">🟡 WATCH</button>
+        <button class="export-btn pause" onclick="downloadCSV('PAUSE')">🔴 PAUSE</button>
+    </div>
+</div>

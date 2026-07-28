@@ -1,0 +1,89 @@
+<!-- ================================ -->
+<!-- REGISTER SCREEN                  -->
+<!-- ================================ -->
+<div id="registerScreen" class="login-screen">
+
+    <div class="login-card">
+
+        <h2>
+            🚀 Create your Campaign IQ account
+        </h2>
+
+
+        <p>
+            Join thousands of marketers using AI to optimize campaigns.
+        </p>
+
+
+        <div id="registerError" class="error-msg"></div>
+
+
+        <input
+            id="regFullNameInput"
+            type="text"
+            placeholder="Full Name"
+        />
+
+
+        <input
+            id="regCompanyInput"
+            type="text"
+            placeholder="Company / Brand Name"
+        />
+
+
+        <input
+            id="regEmailInput"
+            type="email"
+            placeholder="Business Email"
+        />
+
+
+        <input
+            id="regPasswordInput"
+            type="password"
+            placeholder="Create Password"
+        />
+
+
+        <input
+            id="regConfirmPasswordInput"
+            type="password"
+            placeholder="Confirm Password"
+        />
+
+
+        <label style="display:flex;align-items:center;margin-top:15px;font-size:14px;">
+            <input id="agreeTerms" type="checkbox" style="margin-right:10px;">
+            I agree to the Terms of Service and Privacy Policy.
+        </label>
+
+
+        <button 
+            id="registerBtn"
+            onclick="register()">
+
+            Create Account
+
+        </button>
+
+
+
+        <button
+            onclick="showLogin(true)"
+            style="
+                margin-top:15px;
+                background:none;
+                border:none;
+                color:#8b9bb5;
+                cursor:pointer;
+            ">
+
+            Already have account? Sign in
+
+        </button>
+
+
+    </div>
+
+</div>

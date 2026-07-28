@@ -1,7 +1,169 @@
 import re
 
 # ============================================
-# 1. SCORING ENGINE (guna kod anda)
+# 0. INPUT NORMALIZER (PINTU MASUK UTAMA)
+# ============================================
+
+def normalize_input(data):
+    """
+    Pintu masuk utama untuk semua jenis input.
+    
+    Input:
+        - Text (string) - dari user paste
+        - JSON (dict) - dari API / frontend
+        - List - dari multiple sources
+    
+    Output:
+        Normalized campaign objects
+    """
+    
+    # ============================================
+    # STEP 1 - Detect Input Type
+    # ============================================
+    
+    # Jika string, raw_text
+    if isinstance(data, str):
+        return _parse_text(data)
+    
+    # Jika dict, mungkin JSON
+    elif isinstance(data, dict):
+        return _parse_json(data)
+    
+    # Jika list, multiple campaigns
+    elif isinstance(data, list):
+        return _parse_list(data)
+    
+    # Fallback
+    else:
+        return _parse_text(str(data))
+
+
+# ============================================
+# 0.1 - TEXT PARSER
+# ============================================
+
+def _parse_text(raw_text):
+    """
+    Parse text format (sedia ada dari run_engine)
+    Return: List of campaign blocks
+    """
+    blocks = []
+    current = []
+    
+    campaign_pattern = re.compile(
+        r"^(Campaign|Campaign Name|Ad Set|Adset)\s*[:\-]",
+        re.IGNORECASE
+    )
+    
+    for line in raw_text.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        
+        if campaign_pattern.match(line) and current:
+            blocks.append("\n".join(current))
+            current = []
+        
+        current.append(line)
+    
+    if current:
+        blocks.append("\n".join(current))
+    
+    if len(blocks) == 0:
+        blocks = [raw_text.strip()]
+    
+    return blocks
+
+
+# ============================================
+# 0.2 - JSON PARSER
+# ============================================
+
+def _parse_json(json_data):
+    """
+    Parse JSON format
+    Support:
+        - {"campaigns": [...]}
+        - {"campaign": {...}}
+        - Single campaign object
+    """
+    blocks = []
+    
+    # Jika ada "campaigns" key
+    if "campaigns" in json_data and isinstance(json_data["campaigns"], list):
+        for campaign in json_data["campaigns"]:
+            blocks.append(_campaign_to_block(campaign))
+    
+    # Jika ada "campaign" key (single)
+    elif "campaign" in json_data:
+        blocks.append(_campaign_to_block(json_data["campaign"]))
+    
+    # Jika direct single campaign object
+    elif "name" in json_data or "spend" in json_data:
+        blocks.append(_campaign_to_block(json_data))
+    
+    return blocks
+
+
+# ============================================
+# 0.3 - LIST PARSER
+# ============================================
+
+def _parse_list(data_list):
+    """
+    Parse list of campaigns
+    """
+    blocks = []
+    for item in data_list:
+        if isinstance(item, dict):
+            blocks.append(_campaign_to_block(item))
+        elif isinstance(item, str):
+            blocks.append(item)
+    return blocks
+
+
+# ============================================
+# 0.4 - CAMPAIGN TO BLOCK CONVERTER
+# ============================================
+
+def _campaign_to_block(campaign):
+    """
+    Convert campaign dict to text block
+    Yang run_engine() faham
+    """
+    lines = []
+    
+    # Name
+    if "name" in campaign:
+        lines.append(f"Campaign: {campaign['name']}")
+    
+    # Metrics
+    fields = [
+        ("budget", "Budget"),
+        ("spend", "Spend"),
+        ("revenue", "Revenue"),
+        ("roas", "ROAS"),
+        ("ctr", "CTR"),
+        ("cpc", "CPC"),
+        ("cpa", "CPA"),
+        ("conversions", "Conversions"),
+        ("impressions", "Impressions"),
+        ("clicks", "Clicks")
+    ]
+    
+    for key, label in fields:
+        if key in campaign and campaign[key] is not None:
+            value = campaign[key]
+            if isinstance(value, float):
+                lines.append(f"{label}: {value:.2f}")
+            else:
+                lines.append(f"{label}: {value}")
+    
+    return "\n".join(lines)
+
+
+# ============================================
+# 1. SCORING ENGINE
 # ============================================
 
 def calculate_score(campaign_text):
@@ -15,9 +177,12 @@ def calculate_score(campaign_text):
     text = campaign_text.upper()
 
     # ---------- ROAS ----------
-    roas = re.search(r"ROAS[:\s]*([0-9.]+)", text)
+    roas = re.search(r"ROAS[:\s]*([\d]+(?:\.[\d]+)?)", text)
     if roas:
-        value = float(roas.group(1))
+        try:
+            value = float(roas.group(1))
+        except ValueError:
+            value = 0
 
         if value >= 5:
             score += 40
@@ -29,9 +194,12 @@ def calculate_score(campaign_text):
             score -= 20
 
     # ---------- CPA ----------
-    cpa = re.search(r"CPA[:\s]*([0-9.]+)", text)
+    cpa = re.search(r"CPA[:\s]*([\d]+(?:\.[\d]+)?)", text)
     if cpa:
-        value = float(cpa.group(1))
+        try:
+            value = float(cpa.group(1))
+        except ValueError:
+            value = 0
 
         if value <= 5:
             score += 20
@@ -43,9 +211,12 @@ def calculate_score(campaign_text):
             score -= 30
 
     # ---------- CTR ----------
-    ctr = re.search(r"CTR[:\s]*([0-9.]+)", text)
+    ctr = re.search(r"CTR[:\s]*([\d]+(?:\.[\d]+)?)", text)
     if ctr:
-        value = float(ctr.group(1))
+        try:
+            value = float(ctr.group(1))
+        except ValueError:
+            value = 0
 
         if value >= 2:
             score += 20
@@ -60,7 +231,37 @@ def calculate_score(campaign_text):
 
 
 # ============================================
-# 2. STATUS DETECTION (guna kod anda)
+# 1.5 EXTRACT METRICS
+# ============================================
+
+def extract_metrics(text):
+    text = text.upper()
+
+    patterns = {
+        "budget": r"BUDGET[:\sRM$]*([\d]+(?:\.\d+)?)",
+        "spend": r"SPEND[:\sRM$]*([\d]+(?:\.\d+)?)",
+        "roas": r"ROAS[:\s]*([\d]+(?:\.\d+)?)",
+        "ctr": r"CTR[:\s]*([\d]+(?:\.\d+)?)",
+        "cpc": r"CPC[:\sRM$]*([\d]+(?:\.\d+)?)",
+        "cpa": r"CPA[:\sRM$]*([\d]+(?:\.\d+)?)",
+        "conversion": r"CONVERSIONS?[:\s]*([\d]+)",
+    }
+
+    metrics = {}
+
+    for key, pattern in patterns.items():
+        m = re.search(pattern, text)
+        if m:
+            try:
+                metrics[key] = float(m.group(1))
+            except:
+                pass
+
+    return metrics
+
+
+# ============================================
+# 2. STATUS DETECTION
 # ============================================
 
 def detect_status(score):
@@ -72,42 +273,121 @@ def detect_status(score):
 
 
 # ============================================
-# 3. INSIGHT GENERATOR (BARU)
+# 3. INSIGHT GENERATOR
 # ============================================
 
-def generate_insight(campaign_text, score, status):
-    """
-    Beri penjelasan kenapa status ini dipilih.
-    """
-    text = campaign_text.upper()
-    reasons = []
+def generate_insight(metrics, score, status):
+
+    insights = []
+
+    # ---------- ROAS ----------
+    roas = metrics.get("roas")
+    if roas is not None:
+        if roas >= 5:
+            insights.append(f"✅ ROAS {roas} is excellent and highly profitable.")
+        elif roas >= 3:
+            insights.append(f"✅ ROAS {roas} is profitable.")
+        else:
+            insights.append(f"⚠️ ROAS {roas} is below the ideal target.")
+
+    # ---------- CTR ----------
+    ctr = metrics.get("ctr")
+    if ctr is not None:
+        if ctr >= 2:
+            insights.append(f"✅ CTR {ctr}% indicates strong ad engagement.")
+        elif ctr >= 1:
+            insights.append(f"⚠️ CTR {ctr}% is average.")
+        else:
+            insights.append(f"❌ CTR {ctr}% is weak. Your creatives may need improvement.")
+
+    # ---------- CPA ----------
+    cpa = metrics.get("cpa")
+    if cpa is not None:
+        if cpa <= 5:
+            insights.append(f"✅ CPA {cpa} is very efficient.")
+        elif cpa <= 10:
+            insights.append(f"✅ CPA {cpa} is within an acceptable range.")
+        else:
+            insights.append(f"❌ CPA {cpa} is too high.")
+
+    # ---------- Recommendation ----------
+    if status == "SCALE":
+        insights.append("🚀 Recommendation: Increase budget by 20% while monitoring CPA.")
+    elif status == "WATCH":
+        insights.append("👀 Recommendation: Continue monitoring before making major changes.")
+    else:
+        insights.append("🛑 Recommendation: Pause the campaign and improve creatives or targeting.")
+
+    return "\n".join(insights)
+
+
+# ============================================
+# 4. RECOMMENDATION ENGINE
+# ============================================
+
+def generate_recommendation(metrics, status):
+
+    recommendation = []
+
+    budget = metrics.get("budget")
+    roas = metrics.get("roas")
+    cpa = metrics.get("cpa")
 
     if status == "SCALE":
-        roas = re.search(r"ROAS[:\s]*([0-9.]+)", text)
-        if roas and float(roas.group(1)) >= 5:
-            reasons.append("ROAS is excellent")
-        else:
-            reasons.append("Strong overall performance")
+        if budget:
+            new_budget = round(budget * 1.2, 2)
+            recommendation.append(
+                f"📈 Increase budget from ${budget:.0f} → ${new_budget:.0f}."
+            )
 
-    elif status == "PAUSE":
-        cpa = re.search(r"CPA[:\s]*([0-9.]+)", text)
-        ctr = re.search(r"CTR[:\s]*([0-9.]+)", text)
-        
-        if cpa and float(cpa.group(1)) > 15:
-            reasons.append("CPA is too high")
-        if ctr and float(ctr.group(1)) < 1:
-            reasons.append("CTR is weak")
-        if not reasons:
-            reasons.append("Multiple metrics underperforming")
+        recommendation.append(
+            "🎯 Review performance after additional spend."
+        )
 
-    else:  # WATCH
-        reasons.append("Performance is moderate — needs monitoring")
+        if cpa is not None:
+            recommendation.append(
+                f"🛑 Stop scaling if CPA rises above {round(cpa * 1.2,2)}."
+            )
 
-    return " + ".join(reasons) if reasons else "Performance within acceptable range"
+        if roas is not None:
+            recommendation.append(
+                f"🛑 Stop scaling if ROAS falls below {max(2.5, round(roas-0.7,1))}."
+            )
+
+    elif status == "WATCH":
+
+        recommendation.append(
+            "👀 Keep monitoring for another 24 hours before making changes."
+        )
+
+    else:
+
+        recommendation.append(
+            "⛔ Pause this campaign and investigate the creatives, audience and landing page."
+        )
+
+    return "\n".join(recommendation)
 
 
 # ============================================
-# 4. IMPACT ESTIMATOR (BARU)
+# 5. HEALTH CALCULATOR
+# ============================================
+
+def calculate_health(score):
+    if score >= 90:
+        return "Excellent", "🟢"
+    elif score >= 80:
+        return "Very Good", "🟢"
+    elif score >= 65:
+        return "Good", "🟡"
+    elif score >= 50:
+        return "Average", "🟡"
+    else:
+        return "Poor", "🔴"
+
+
+# ============================================
+# 6. IMPACT ESTIMATOR
 # ============================================
 
 def estimate_impact(status, score):
@@ -123,7 +403,7 @@ def estimate_impact(status, score):
 
 
 # ============================================
-# 5. CEO SUMMARY (BARU)
+# 7. CEO SUMMARY
 # ============================================
 
 def generate_summary(campaigns):
@@ -144,78 +424,133 @@ def generate_summary(campaigns):
 
 
 # ============================================
-# 6. MAIN ENGINE (Panggil dari app.py)
+# 8. MAIN ENGINE (VERSION 3 - NORMALIZED INPUT)
 # ============================================
 
 def run_engine(raw_text):
     """
-    Fungsi utama — panggil dari app.py.
-    Input: raw text dari user
-    Output: JSON structure
+    Main Decision Engine
+    Input:
+        Raw text (single atau multiple campaigns)
+    Output:
+        JSON untuk frontend
     """
-    lines = raw_text.split("\n")
+
+    # ============================================
+    # STEP 1 - Normalize input
+    # ============================================
+
+    blocks = normalize_input(raw_text)
+
+    # ============================================
+    # STEP 2 - Analyze setiap campaign
+    # ============================================
+
     campaigns = []
 
-    for line in lines:
-        line = line.strip()
-        if not line:
+    for block in blocks:
+
+        if not block.strip():
             continue
 
-        # Extract campaign name
-        name_match = re.search(r"Campaign\s*([A-Za-z0-9 ]+)", line, re.IGNORECASE)
-        if name_match:
-            name = "Campaign " + name_match.group(1).strip().upper()
-        else:
-            name = "Unknown Campaign"
+        # Cari nama campaign
+        name = "Unknown Campaign"
+
+        m = re.search(
+            r"(?:Campaign|Campaign Name|Ad Set|Adset)\s*[:\-]\s*(.+)",
+            block,
+            re.IGNORECASE
+        )
+
+        if m:
+            name = m.group(1).strip()
 
         # Calculate score
-        score = calculate_score(line)
+        score = calculate_score(block)
+
+        # Calculate health
+        health, health_icon = calculate_health(score)
+
+        # Extract metrics
+        metrics = extract_metrics(block)
 
         # Detect status
         status = detect_status(score)
 
         # Generate insight
-        insight = generate_insight(line, score, status)
+        insight = generate_insight(metrics, score, status)
+
+        # Generate recommendation
+        recommendation = generate_recommendation(metrics, status)
 
         # Estimate impact
         impact_text = estimate_impact(status, score)
 
-        # Reason & Impact (untuk UI consistency)
         if status == "SCALE":
             reason = f"Score {score}/100 — Strong performer"
             impact = "Increase budget by 20-30%"
+
         elif status == "WATCH":
             reason = f"Score {score}/100 — Needs monitoring"
             impact = "Review performance daily"
+
         else:
             reason = f"Score {score}/100 — Underperforming"
             impact = "Pause to stop burning budget"
 
         campaigns.append({
+
             "name": name,
+
             "score": score,
+
             "status": status,
+
+            "health": health,
+
+            "health_icon": health_icon,
+
+            "metrics": metrics,
+
             "reason": reason,
+
             "impact": impact,
+
             "insight": insight,
-            "impact_text": impact_text
+
+            "impact_text": impact_text,
+
+            "recommendation": recommendation
+
         })
 
-    # Generate CEO summary
+    # ============================================
+    # STEP 3 - CEO Summary
+    # ============================================
+
     ceo_summary = generate_summary(campaigns)
 
-    # Calculate money at risk
-    total_risk = 0
-    for c in campaigns:
-        if c.get("status") == "PAUSE":
-            total_risk += 37  # estimate
+    total_risk = sum(
+        37 for c in campaigns
+        if c["status"] == "PAUSE"
+    )
 
     return {
+
         "greeting": "Good Morning 👋",
+
         "summary": {
-            "money_at_risk": f"USD {total_risk}/day" if total_risk > 0 else "USD 0/day",
-            "total_campaigns_checked": len(campaigns)
+
+            "money_at_risk":
+                f"USD {total_risk}/day" if total_risk else "USD 0/day",
+
+            "total_campaigns_checked":
+                len(campaigns)
+
         },
+
         "ceo_summary": ceo_summary,
+
         "campaigns": campaigns
+
     }
